@@ -1,0 +1,38 @@
+df <- read.csv("C:/Users/bhou1/Downloads/Combined Table Longinotti Hou UNK 5 2026-10-20-Chem124-Sample-13.10.fid.csv")
+df_clean <- subset(df, Type == "Compound" & Flags != "Weak")
+df_clean$ppm_bin <- paste0(round(df_clean$ppm, 2), "_ppm")
+pca_matrix <- xtabs(Area ~ Sample + ppm_bin, data = df_clean)
+pca_matrix <- as.data.frame.matrix(pca_matrix)
+numeric_data <- pca_matrix[, apply(pca_matrix, 2, var) > 0]
+pca_result <- prcomp(numeric_data, center = TRUE, scale. = TRUE)
+scores <- pca_result$x
+var_pct <- round(100 * (pca_result$sdev^2 / sum(pca_result$sdev^2)), 1)
+sample_names <- rownames(scores)
+
+is_arabica <- grepl("Arabica", sample_names, ignore.case = TRUE)
+point_colors[is_arabica] <- "blue"
+point_sizes[is_arabica]  <- 2
+
+is_robusta <- grepl("Robusta", sample_names, ignore.case = TRUE)
+point_colors[is_robusta] <- "darkorange"
+point_sizes[is_robusta]  <- 2
+
+is_unknown <- grepl("Unknown 5", sample_names, ignore.case = TRUE)
+point_colors[is_unknown] <- "forestgreen"
+point_sizes[is_unknown]  <- 2
+
+plot(scores[, 1], scores[, 2],
+     pch = 19, col = point_colors, cex = point_sizes,
+     xlim = c(-10, 18), 
+     ylim = c(-15, 15),     
+     xlab = paste0("PC 1 (", var_pct[1], "%)"),
+     ylab = paste0("PC 2 (", var_pct[2], "%)"),
+     main = "PCA Scores Plot")
+
+abline(h = 0, v = 0, lty = 2, col = "gray60")
+text(scores[, 1], scores[, 2], labels = sample_names, pos = 3, cex = 0.75)
+
+legend("topright", 
+       legend = c("Arabica", "Robusta", "Unknown 5"),
+       col = c("blue", "darkorange", "forestgreen"), 
+       pch = 19, pt.cex = c(2, 2, 2), bty = "n")
